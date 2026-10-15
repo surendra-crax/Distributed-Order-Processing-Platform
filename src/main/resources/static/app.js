@@ -522,6 +522,181 @@ document.getElementById('btn-fire-stress-test').addEventListener('click', async 
   loadOutbox();
 });
 
+// Animate Architecture Pipeline
+function animatePipeline() {
+  const nodes = ['node-api', 'node-inventory', 'node-acid', 'node-outbox', 'node-broker', 'node-consumer'];
+  nodes.forEach((nodeId, idx) => {
+    setTimeout(() => {
+      const el = document.getElementById(nodeId);
+      if (el) {
+        el.classList.add('active-step');
+        setTimeout(() => el.classList.remove('active-step'), 600);
+      }
+    }, idx * 250);
+  });
+}
+
+// 1-Click Interactive Demos
+document.getElementById('btn-demo-order').addEventListener('click', async () => {
+  // Switch to order tab
+  document.getElementById('tab-order-btn').click();
+  orderSkuSelect.value = 'TECH-KEYB-01';
+  document.getElementById('order-quantity-input').value = 1;
+  document.getElementById('order-customer-id').value = 'DEMO-USER-01';
+  orderIdempotencyKeyInput.value = generateUUID();
+
+  showToast('Executing live order flow through full distributed pipeline...', 'info');
+  animatePipeline();
+
+  // Submit order
+  setTimeout(() => {
+    document.getElementById('btn-submit-order').click();
+  }, 400);
+});
+
+document.getElementById('btn-demo-flash-sale').addEventListener('click', () => {
+  // Switch to concurrency tab
+  document.getElementById('tab-concurrency-btn').click();
+  stressSkuSelect.value = 'TECH-MONI-03';
+  document.getElementById('stress-threads-input').value = 20;
+  document.getElementById('stress-qty-input').value = 2;
+
+  showToast('Launching Black Friday flash-sale contention test (20 parallel threads)...', 'info');
+  setTimeout(() => {
+    document.getElementById('btn-fire-stress-test').click();
+  }, 300);
+});
+
+document.getElementById('btn-demo-double-click').addEventListener('click', async () => {
+  document.getElementById('tab-order-btn').click();
+  const demoKey = 'wifi-drop-double-click-' + Date.now();
+  const sku = 'TECH-MOUS-02';
+  const payload = {
+    customerId: 'CUST-DOUBLE-CLICK',
+    customerEmail: 'user@test.com',
+    currency: 'USD',
+    items: [{ productId: 'PROD-' + sku, sku, productName: 'Wireless Mouse', quantity: 1, unitPrice: 49.99 }]
+  };
+
+  showToast('Simulating Wi-Fi drop: Clicking "Pay" twice with identical Idempotency-Key...', 'info');
+  animatePipeline();
+
+  try {
+    // Click #1
+    orderResponsePreview.textContent = 'Click #1: Processing initial order...';
+    const res1 = await fetch('/api/v1/orders', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Idempotency-Key': demoKey },
+      body: JSON.stringify(payload)
+    });
+    const data1 = await res1.json();
+
+    // Click #2 (50ms later with same key)
+    setTimeout(async () => {
+      orderResponsePreview.textContent += '\n\nClick #2 (Duplicate click arrives 50ms later)...';
+      const res2 = await fetch('/api/v1/orders', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Idempotency-Key': demoKey },
+        body: JSON.stringify(payload)
+      });
+      const data2 = await res2.json();
+
+      orderResponsePreview.textContent = 
+        `Click #1: HTTP ${res1.status} (Order Created: ${data1.orderNumber})\n` +
+        `Click #2: HTTP ${res2.status} (Idempotent Cache Hit: ${data2.orderNumber})\n\n` +
+        `🛡️ Idempotency Verification:\nBoth clicks returned the identical order without charging or debiting stock twice!`;
+
+      showToast(`Wi-Fi Double-Click Defense Verified: Identical order returned, 0 duplicate charges!`, 'success');
+      loadInventory();
+      loadOrders();
+      loadOutbox();
+    }, 150);
+
+  } catch (err) {
+    orderResponsePreview.textContent = 'Error: ' + err.message;
+  }
+});
+
+// Interactive Guided Tour
+const tourModal = document.getElementById('tour-modal');
+const tourStepBadge = document.getElementById('tour-step-badge');
+const tourTitle = document.getElementById('tour-title');
+const tourDesc = document.getElementById('tour-desc');
+const tourAnalogy = document.getElementById('tour-analogy');
+const btnTourPrev = document.getElementById('btn-tour-prev');
+const btnTourNext = document.getElementById('btn-tour-next');
+
+let currentTourStep = 0;
+const tourSteps = [
+  {
+    title: '1. Architecture & The Distributed Pipeline',
+    desc: 'Notice the 6 steps at the top banner. In microservices, an order cannot be processed by a single database write. It spans client idempotency checks, atomic stock reservation, ACID outbox persistence, Kafka event dispatch, and idempotent consumer deduplication.',
+    analogy: '🏢 <strong>Real-World Analogy:</strong> Like Amazon ordering — clicking "Buy" doesn’t just write to a DB; it verifies your payment, locks the item in warehouse inventory, and notifies the shipping logistics queue asynchronously.',
+    action: () => animatePipeline()
+  },
+  {
+    title: '2. Solving the Flash-Sale Overselling Disaster',
+    desc: 'When 10,000 customers hit "Buy" for 500 iPhones at midnight, basic in-memory checks fail and sell thousands of non-existent items. We use Atomic Conditional SQL updates (WHERE available >= :qty) to guarantee stock NEVER drops below 0.',
+    analogy: '🎟️ <strong>Real-World Analogy:</strong> Like Ticketmaster concert ticket sales — only buyers who atomically acquire the reservation get tickets. The rest receive an immediate friendly 422 Insufficient Inventory response.',
+    action: () => document.getElementById('tab-concurrency-btn').click()
+  },
+  {
+    title: '3. Eliminating "Ghost Orders" via Transactional Outbox',
+    desc: 'If a backend writes to PostgreSQL, but the Kafka network blinks before publishing, the customer is charged but the warehouse NEVER receives the shipping event. The Transactional Outbox commits both the order and event to PostgreSQL in the exact same transaction, eliminating dual-write loss.',
+    analogy: '📦 <strong>Real-World Analogy:</strong> Like a receipt locked inside the warehouse dispatch safe. The safe is only closed when both the customer record and the shipping order exist together.',
+    action: () => document.getElementById('tab-outbox-btn').click()
+  },
+  {
+    title: '4. Wi-Fi Drop Protection (Idempotency)',
+    desc: 'When a customer taps "Pay", their phone Wi-Fi drops, and they tap "Pay" again, our engine uses the unique Idempotency-Key and SHA-256 payload hash to return the cached receipt without double-charging or deducting duplicate stock.',
+    analogy: '💳 <strong>Real-World Analogy:</strong> Like a bank check number — if someone tries to cash Check #101 twice, the bank honors it once and safely ignores the duplicate presentation.',
+    action: () => document.getElementById('tab-order-btn').click()
+  }
+];
+
+function updateTourModal() {
+  const step = tourSteps[currentTourStep];
+  tourStepBadge.textContent = `STEP ${currentTourStep + 1} OF ${tourSteps.length}`;
+  tourTitle.textContent = step.title;
+  tourDesc.textContent = step.desc;
+  tourAnalogy.innerHTML = step.analogy;
+  btnTourPrev.disabled = currentTourStep === 0;
+  btnTourNext.textContent = currentTourStep === tourSteps.length - 1 ? 'Finish Tour 🚀' : 'Next Step →';
+  if (step.action) step.action();
+}
+
+document.getElementById('btn-start-tour').addEventListener('click', () => {
+  currentTourStep = 0;
+  updateTourModal();
+  tourModal.classList.add('active');
+});
+
+document.getElementById('btn-close-tour').addEventListener('click', () => tourModal.classList.remove('active'));
+document.getElementById('btn-tour-skip').addEventListener('click', () => tourModal.classList.remove('active'));
+
+btnTourPrev.addEventListener('click', () => {
+  if (currentTourStep > 0) {
+    currentTourStep--;
+    updateTourModal();
+  }
+});
+
+btnTourNext.addEventListener('click', () => {
+  if (currentTourStep < tourSteps.length - 1) {
+    currentTourStep++;
+    updateTourModal();
+  } else {
+    tourModal.classList.remove('active');
+    showToast('Tour completed! You are ready to explore the platform.', 'success');
+  }
+});
+
+// Explainer Modal
+const explainerModal = document.getElementById('explainer-modal');
+document.getElementById('btn-open-explainer').addEventListener('click', () => explainerModal.classList.add('active'));
+document.getElementById('btn-close-explainer').addEventListener('click', () => explainerModal.classList.remove('active'));
+document.getElementById('btn-explainer-got-it').addEventListener('click', () => explainerModal.classList.remove('active'));
+
 // Refresh buttons
 document.getElementById('btn-refresh-inventory').addEventListener('click', loadInventory);
 document.getElementById('btn-refresh-orders').addEventListener('click', loadOrders);
@@ -546,3 +721,4 @@ window.addEventListener('DOMContentLoaded', () => {
     loadOutbox();
   }, 4000);
 });
+

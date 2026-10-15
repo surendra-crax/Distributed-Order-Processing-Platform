@@ -33,6 +33,12 @@
           <span class="status-dot"></span>
           <span id="system-health-text">Checking Cluster...</span>
         </span>
+        <button class="btn btn-primary btn-sm" id="btn-start-tour">
+          🎓 Interactive Tour
+        </button>
+        <button class="btn btn-secondary btn-sm" id="btn-open-explainer">
+          💡 Why This Matters (Real-World)
+        </button>
         <a href="/swagger-ui.html" target="_blank" class="btn btn-secondary btn-sm" id="btn-swagger-link">
           OpenAPI Docs
         </a>
@@ -85,6 +91,24 @@
       </div>
     </section>
 
+    <!-- 1-Click Interactive Demos Quick Bar -->
+    <section class="quick-demo-bar">
+      <div class="quick-demo-label">
+        <span>⚡ 1-Click Live Demos:</span>
+      </div>
+      <div class="quick-demo-actions">
+        <button class="btn btn-primary btn-sm" id="btn-demo-order">
+          🛒 Demo 1: Place Order & Watch Live Outbox Relay
+        </button>
+        <button class="btn btn-danger btn-sm" id="btn-demo-flash-sale">
+          🔥 Demo 2: Flash-Sale Contention (20 Parallel Buyers)
+        </button>
+        <button class="btn btn-secondary btn-sm" id="btn-demo-double-click">
+          🛡️ Demo 3: Wi-Fi Double-Click (Idempotency Defense)
+        </button>
+      </div>
+    </section>
+
     <!-- System Metrics / Counters Grid -->
     <section class="stats-grid">
       <div class="stat-card" id="card-stat-skus">
@@ -131,6 +155,43 @@
     <!-- TAB 1: Inventory Catalog -->
     <main>
       <section class="tab-pane active" id="tab-inventory">
+        
+        <!-- Explainer Callout Card -->
+        <div class="real-world-card">
+          <div class="real-world-header">
+            <div class="real-world-title">
+              <span>📦 Why Inventory Isolation Matters in Real-World Systems</span>
+            </div>
+            <span class="badge badge-success">Zero Overselling Guarantee</span>
+          </div>
+          <div class="real-world-grid">
+            <div class="real-world-item">
+              <div class="real-world-item-title" style="color: var(--color-danger);">
+                <span>⚠️ The Real-World Problem</span>
+              </div>
+              <div class="real-world-item-body">
+                During product launches (like Black Friday or sneaker drops), 10,000 customers hit "Buy" for 500 items. Naive apps check stock in memory, selling 2,000 items they don't have.
+              </div>
+            </div>
+            <div class="real-world-item">
+              <div class="real-world-item-title" style="color: var(--color-primary);">
+                <span>💡 How Our Engine Solves It</span>
+              </div>
+              <div class="real-world-item-body">
+                We use <strong>Atomic Conditional SQL Updates</strong>: <code>WHERE available &gt;= :qty</code>. The database engine prevents negative numbers at the hardware level with zero deadlocks.
+              </div>
+            </div>
+            <div class="real-world-item">
+              <div class="real-world-item-title" style="color: var(--color-success);">
+                <span>🧪 What to Test on This Screen</span>
+              </div>
+              <div class="real-world-item-body">
+                Look at the <strong>Available</strong> vs <strong>Reserved</strong> bars. Click <strong>+25 Restock</strong> to simulate warehouse replenishment in real-time.
+              </div>
+            </div>
+          </div>
+        </div>
+
         <div class="content-card">
           <div class="card-title-row">
             <h3>
@@ -165,6 +226,43 @@
 
       <!-- TAB 2: Order Terminal & Idempotency Lab -->
       <section class="tab-pane" id="tab-order" style="display: none;">
+
+        <!-- Explainer Callout Card -->
+        <div class="real-world-card">
+          <div class="real-world-header">
+            <div class="real-world-title">
+              <span>🛡️ Why Idempotency & The Outbox Pattern Save E-Commerce Companies</span>
+            </div>
+            <span class="badge badge-purple">RFC 7807 Standard</span>
+          </div>
+          <div class="real-world-grid">
+            <div class="real-world-item">
+              <div class="real-world-item-title" style="color: var(--color-danger);">
+                <span>⚠️ The Real-World Problem</span>
+              </div>
+              <div class="real-world-item-body">
+                If your phone Wi-Fi drops while paying on DoorDash and you tap "Pay" twice, naive backends charge your card twice and order duplicate food.
+              </div>
+            </div>
+            <div class="real-world-item">
+              <div class="real-world-item-title" style="color: var(--color-primary);">
+                <span>💡 How Our Engine Solves It</span>
+              </div>
+              <div class="real-world-item-body">
+                Every request carries an <strong>Idempotency-Key</strong>. Retries return the original receipt with <strong>0 extra charges</strong>. Tampered requests trigger <strong>HTTP 409 Conflict</strong>.
+              </div>
+            </div>
+            <div class="real-world-item">
+              <div class="real-world-item-title" style="color: var(--color-success);">
+                <span>🧪 What to Test on This Screen</span>
+              </div>
+              <div class="real-world-item-body">
+                Place an order, then click <strong>Scenario 1 (Replay)</strong> to verify zero double-debit, and <strong>Scenario 2 (Conflict)</strong> to see fraud defense.
+              </div>
+            </div>
+          </div>
+        </div>
+
         <div class="stress-tester-panel">
 
           <!-- Order Creation Form -->
@@ -249,6 +347,43 @@
 
       <!-- TAB 3: Flash-Sale Concurrency Simulator -->
       <section class="tab-pane" id="tab-concurrency" style="display: none;">
+
+        <!-- Explainer Callout Card -->
+        <div class="real-world-card">
+          <div class="real-world-header">
+            <div class="real-world-title">
+              <span>🔥 Why Concurrency Testing Matters (The Black Friday Test)</span>
+            </div>
+            <span class="badge badge-warning">High-Throughput Concurrency</span>
+          </div>
+          <div class="real-world-grid">
+            <div class="real-world-item">
+              <div class="real-world-item-title" style="color: var(--color-danger);">
+                <span>⚠️ The Real-World Problem</span>
+              </div>
+              <div class="real-world-item-body">
+                When 20 threads read a database row simultaneously (`stock = 10`), all 20 threads think stock is available. All 20 succeed, resulting in <strong>-10 units</strong> (lost revenue).
+              </div>
+            </div>
+            <div class="real-world-item">
+              <div class="real-world-item-title" style="color: var(--color-primary);">
+                <span>💡 How Our Engine Solves It</span>
+              </div>
+              <div class="real-world-item-body">
+                PostgreSQL conditionally decrements in an atomic operation. Even with 50 threads firing at the exact same microsecond, <strong>zero overselling is guaranteed</strong>.
+              </div>
+            </div>
+            <div class="real-world-item">
+              <div class="real-world-item-title" style="color: var(--color-success);">
+                <span>🧪 What to Test on This Screen</span>
+              </div>
+              <div class="real-world-item-body">
+                Click <strong>Launch Flash-Sale Attack</strong>. Watch 20 parallel threads fight for limited items. Notice <strong>Oversold Units = 0</strong>.
+              </div>
+            </div>
+          </div>
+        </div>
+
         <div class="content-card">
           <div class="card-title-row">
             <h3>
@@ -311,6 +446,43 @@
 
       <!-- TAB 4: Transactional Outbox Stream -->
       <section class="tab-pane" id="tab-outbox" style="display: none;">
+
+        <!-- Explainer Callout Card -->
+        <div class="real-world-card">
+          <div class="real-world-header">
+            <div class="real-world-title">
+              <span>📬 Why The Transactional Outbox Pattern Eliminates "Ghost Orders"</span>
+            </div>
+            <span class="badge badge-info">Reliable Messaging</span>
+          </div>
+          <div class="real-world-grid">
+            <div class="real-world-item">
+              <div class="real-world-item-title" style="color: var(--color-danger);">
+                <span>⚠️ The Real-World Problem</span>
+              </div>
+              <div class="real-world-item-body">
+                If the database commits an order, but sending to Kafka fails, the customer's money is taken, but the warehouse never packs the order. The package is lost forever.
+              </div>
+            </div>
+            <div class="real-world-item">
+              <div class="real-world-item-title" style="color: var(--color-primary);">
+                <span>💡 How Our Engine Solves It</span>
+              </div>
+              <div class="real-world-item-body">
+                We write both the <code>orders</code> row and <code>outbox_events</code> row in the <strong>exact same ACID transaction</strong>. A dedicated scheduler relays to Kafka with retries.
+              </div>
+            </div>
+            <div class="real-world-item">
+              <div class="real-world-item-title" style="color: var(--color-success);">
+                <span>🧪 What to Test on This Screen</span>
+              </div>
+              <div class="real-world-item-body">
+                Click <strong>JSON</strong> on any event to see the exact Kafka payload envelope, UUID event ID, and timestamp recorded in PostgreSQL.
+              </div>
+            </div>
+          </div>
+        </div>
+
         <div class="content-card">
           <div class="card-title-row">
             <h3>
@@ -385,7 +557,74 @@
 
   </div>
 
-  <!-- Payload / Restock Modal -->
+  <!-- Interactive Guided Tour Modal -->
+  <div class="modal-overlay" id="tour-modal">
+    <div class="modal-content tour-modal-content">
+      <div class="modal-header">
+        <div class="tour-step-counter" id="tour-step-badge">STEP 1 OF 4</div>
+        <button class="modal-close" id="btn-close-tour">&times;</button>
+      </div>
+      <div>
+        <h3 class="tour-step-title" id="tour-title">Welcome to the Distributed Order Engine</h3>
+        <p class="tour-step-desc" id="tour-desc">Description</p>
+        <div class="tour-step-analogy" id="tour-analogy">Analogy</div>
+      </div>
+      <div class="tour-nav-row">
+        <button class="btn btn-secondary btn-sm" id="btn-tour-prev">← Previous</button>
+        <div style="display: flex; gap: 8px;">
+          <button class="btn btn-secondary btn-sm" id="btn-tour-skip">Close</button>
+          <button class="btn btn-primary btn-sm" id="btn-tour-next">Next Step →</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Architecture & Real-World Business Value Modal -->
+  <div class="modal-overlay" id="explainer-modal">
+    <div class="modal-content tour-modal-content">
+      <div class="modal-header">
+        <h3 style="font-size: 1.15rem; font-weight: 700; color: #fff;">💡 What Problem Does This Platform Solve in the Real World?</h3>
+        <button class="modal-close" id="btn-close-explainer">&times;</button>
+      </div>
+      <div style="font-size: 0.88rem; color: var(--text-muted); line-height: 1.6; max-height: 60vh; overflow-y: auto; padding-right: 8px;">
+        <p style="margin-bottom: 16px;">
+          In small college projects or tutorial CRUD apps, a purchase simply does <code>db.save(order)</code> and <code>stock = stock - 1</code>. That works when 1 user is on the site.
+        </p>
+        <p style="margin-bottom: 16px;">
+          At enterprise scale (Amazon, Uber, Flipkart, DoorDash), this simple code causes catastrophic business failures:
+        </p>
+
+        <div style="display: flex; flex-direction: column; gap: 14px; margin-bottom: 20px;">
+          <div style="background: rgba(255,255,255,0.03); border-left: 3px solid var(--color-danger); padding: 12px 14px; border-radius: 4px;">
+            <strong style="color: #fff;">1. Flash-Sale Overselling Disaster</strong><br>
+            When 50,000 customers buy 500 iPhones at midnight, in-memory checks fail. 5,000 people are charged, but only 500 phones exist. Amazon faces refunds and lawsuits.
+            <br><em style="color: var(--color-primary);">Our Solution: Atomic conditional database updates (WHERE available &gt;= qty) guarantee zero overselling.</em>
+          </div>
+
+          <div style="background: rgba(255,255,255,0.03); border-left: 3px solid var(--color-warning); padding: 12px 14px; border-radius: 4px;">
+            <strong style="color: #fff;">2. The Wi-Fi Drop Double-Charge Bug</strong><br>
+            If a customer's phone Wi-Fi drops while paying and they tap "Pay" twice, naive apps charge their credit card twice and deliver duplicate pizzas.
+            <br><em style="color: var(--color-primary);">Our Solution: Idempotency keys + SHA-256 payload hashing guarantee exactly-one charge.</em>
+          </div>
+
+          <div style="background: rgba(255,255,255,0.03); border-left: 3px solid var(--color-primary); padding: 12px 14px; border-radius: 4px;">
+            <strong style="color: #fff;">3. The Dual-Write Ghost Order Bug</strong><br>
+            Writing to PostgreSQL succeeded, but sending to Kafka failed. The customer's money is taken, but the warehouse never packs the order.
+            <br><em style="color: var(--color-primary);">Our Solution: Transactional Outbox commits the order and event in the same ACID transaction.</em>
+          </div>
+        </div>
+
+        <p style="font-size: 0.82rem; color: var(--color-success);">
+          ✨ <strong>In SDE Interviews:</strong> Being able to explain and demonstrate these exact 3 distributed systems patterns is what distinguishes high-performing backend engineers.
+        </p>
+      </div>
+      <div style="text-align: right; border-top: 1px solid var(--border-subtle); padding-top: 14px; margin-top: 16px;">
+        <button class="btn btn-primary btn-sm" id="btn-explainer-got-it">Got It!</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Payload Details Modal -->
   <div class="modal-overlay" id="generic-modal">
     <div class="modal-content">
       <div class="modal-header">
