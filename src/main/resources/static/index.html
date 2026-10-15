@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Distributed Order Processing Platform | Real-Time Architecture Dashboard</title>
+  <meta name="description" content="Production-grade Distributed Order Processing Platform dashboard demonstrating ACID transactions, atomic inventory locking, transactional outbox pattern, and idempotent messaging.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="index.css">
+</head>
+<body>
+
+  <div class="app-container">
+
+    <!-- Top Navigation & Brand Header -->
+    <header class="app-header">
+      <div class="brand-section">
+        <div class="brand-logo-icon">
+          <svg viewBox="0 0 24 24">
+            <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
+          </svg>
+        </div>
+        <div class="brand-text">
+          <h1>Distributed Order Processing Platform</h1>
+          <p>Java 21 LTS &bull; Spring Boot 3.3.4 &bull; PostgreSQL &bull; Kafka &bull; Redis</p>
+        </div>
+      </div>
+
+      <div class="system-status-pills">
+        <span class="status-pill" id="system-health-pill">
+          <span class="status-dot"></span>
+          <span id="system-health-text">Checking Cluster...</span>
+        </span>
+        <a href="/swagger-ui.html" target="_blank" class="btn btn-secondary btn-sm" id="btn-swagger-link">
+          OpenAPI Docs
+        </a>
+      </div>
+    </header>
+
+    <!-- Architecture Flow Visualization Banner -->
+    <section class="architecture-banner">
+      <div class="architecture-header">
+        <h2>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M4 6h16v2H4zm0 5h16v2H4zm0 5h16v2H4z"/>
+          </svg>
+          Distributed Systems Architecture & Data Flow
+        </h2>
+        <span class="badge badge-info" id="badge-architecture-status">ACTIVE ENGINE</span>
+      </div>
+
+      <div class="pipeline-flow">
+        <div class="pipeline-node" id="node-api">
+          <div class="node-step">STEP 01</div>
+          <div class="node-title">Client API</div>
+          <div class="node-tech">Idempotency-Key & Hashing</div>
+        </div>
+        <div class="pipeline-node" id="node-inventory">
+          <div class="node-step">STEP 02</div>
+          <div class="node-title">Inventory Lock</div>
+          <div class="node-tech">Atomic SQL Decrement</div>
+        </div>
+        <div class="pipeline-node" id="node-acid">
+          <div class="node-step">STEP 03</div>
+          <div class="node-title">Order DB Mutation</div>
+          <div class="node-tech">PostgreSQL ACID Transaction</div>
+        </div>
+        <div class="pipeline-node" id="node-outbox">
+          <div class="node-step">STEP 04</div>
+          <div class="node-title">Transactional Outbox</div>
+          <div class="node-tech">Zero Dual-Write Glitches</div>
+        </div>
+        <div class="pipeline-node" id="node-broker">
+          <div class="node-step">STEP 05</div>
+          <div class="node-title">Event Broker</div>
+          <div class="node-tech">Kafka / Async Relay</div>
+        </div>
+        <div class="pipeline-node" id="node-consumer">
+          <div class="node-step">STEP 06</div>
+          <div class="node-title">Consumer Deduplication</div>
+          <div class="node-tech">Exactly-Once Business Effect</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- System Metrics / Counters Grid -->
+    <section class="stats-grid">
+      <div class="stat-card" id="card-stat-skus">
+        <span class="stat-label">Tracked Catalog SKUs</span>
+        <span class="stat-value" id="stat-total-skus">-</span>
+        <span class="stat-subtext">PostgreSQL Authoritative</span>
+      </div>
+      <div class="stat-card" id="card-stat-orders">
+        <span class="stat-label">Total Orders Handled</span>
+        <span class="stat-value" id="stat-total-orders">-</span>
+        <span class="stat-subtext" id="stat-orders-subtext">Across All Statuses</span>
+      </div>
+      <div class="stat-card" id="card-stat-confirmed">
+        <span class="stat-label">Confirmed Orders</span>
+        <span class="stat-value" id="stat-confirmed-orders">-</span>
+        <span class="stat-subtext">Verified via Event Consumer</span>
+      </div>
+      <div class="stat-card" id="card-stat-outbox">
+        <span class="stat-label">Outbox Published Events</span>
+        <span class="stat-value" id="stat-outbox-events">-</span>
+        <span class="stat-subtext">Reliable Event Relay</span>
+      </div>
+    </section>
+
+    <!-- Navigation Tabs -->
+    <nav class="nav-tabs" role="tablist">
+      <button class="tab-btn active" id="tab-inventory-btn" data-target="tab-inventory">
+        📦 Live Inventory Catalog
+      </button>
+      <button class="tab-btn" id="tab-order-btn" data-target="tab-order">
+        ⚡ Order Terminal & Idempotency Lab
+      </button>
+      <button class="tab-btn" id="tab-concurrency-btn" data-target="tab-concurrency">
+        🔥 Flash-Sale Concurrency Simulator
+      </button>
+      <button class="tab-btn" id="tab-outbox-btn" data-target="tab-outbox">
+        📬 Transactional Outbox Stream
+      </button>
+      <button class="tab-btn" id="tab-orders-list-btn" data-target="tab-orders-list">
+        📜 Orders & Audit Trail
+      </button>
+    </nav>
+
+    <!-- TAB 1: Inventory Catalog -->
+    <main>
+      <section class="tab-pane active" id="tab-inventory">
+        <div class="content-card">
+          <div class="card-title-row">
+            <h3>
+              <svg viewBox="0 0 24 24"><path d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
+              Live Product Inventory & Stock Allocations
+            </h3>
+            <button class="btn btn-secondary btn-sm" id="btn-refresh-inventory">
+              🔄 Refresh Catalog
+            </button>
+          </div>
+
+          <div class="table-responsive">
+            <table id="inventory-table">
+              <thead>
+                <tr>
+                  <th>Product Name</th>
+                  <th>SKU</th>
+                  <th>Price (USD)</th>
+                  <th>Available</th>
+                  <th>Reserved</th>
+                  <th>Stock Distribution</th>
+                  <th>Quick Action</th>
+                </tr>
+              </thead>
+              <tbody id="inventory-table-body">
+                <tr><td colspan="7" style="text-align: center; color: var(--text-dim);">Loading inventory items...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- TAB 2: Order Terminal & Idempotency Lab -->
+      <section class="tab-pane" id="tab-order" style="display: none;">
+        <div class="stress-tester-panel">
+
+          <!-- Order Creation Form -->
+          <div class="content-card">
+            <div class="card-title-row">
+              <h3>
+                <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 14h2v2h-2zm0-10h2v8h-2z"/></svg>
+                Place New Order
+              </h3>
+            </div>
+
+            <form id="order-form">
+              <div class="form-grid">
+                <div class="form-group">
+                  <label for="order-sku-select">Select Product SKU</label>
+                  <select id="order-sku-select" required></select>
+                </div>
+                <div class="form-group">
+                  <label for="order-quantity-input">Quantity</label>
+                  <input type="number" id="order-quantity-input" min="1" max="50" value="1" required>
+                </div>
+                <div class="form-group">
+                  <label for="order-customer-id">Customer ID</label>
+                  <input type="text" id="order-customer-id" value="CUST-VIP-001" required>
+                </div>
+                <div class="form-group">
+                  <label for="order-customer-email">Customer Email</label>
+                  <input type="email" id="order-customer-email" value="alex.dev@example.com" required>
+                </div>
+                <div class="form-group full-width">
+                  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+                    <label for="order-idempotency-key">Idempotency-Key Header</label>
+                    <button type="button" class="btn btn-secondary btn-sm" id="btn-gen-uuid" style="padding: 2px 8px; font-size: 0.7rem;">
+                      Generate New UUID
+                    </button>
+                  </div>
+                  <input type="text" id="order-idempotency-key" required>
+                </div>
+              </div>
+
+              <div style="display: flex; gap: 12px; margin-top: 10px;">
+                <button type="submit" class="btn btn-primary" id="btn-submit-order" style="flex: 1;">
+                  🚀 Execute Order Transaction
+                </button>
+              </div>
+            </form>
+          </div>
+
+          <!-- Idempotency & Conflict Lab Controls -->
+          <div class="content-card">
+            <div class="card-title-row">
+              <h3>
+                <svg viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-2 10h-4v4h-2v-4H7v-2h4V7h2v4h4v2z"/></svg>
+                Idempotency & Failure Experiments
+              </h3>
+            </div>
+
+            <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 16px;">
+              Test distributed idempotency semantics, duplicate payload protection, and RFC 7807 problem details in action:
+            </p>
+
+            <div style="display: flex; flex-direction: column; gap: 12px;">
+              <button class="btn btn-secondary" id="btn-test-idempotent-replay">
+                🔁 Scenario 1: Re-submit Exact Same Request (Expect 201 Cache Return)
+              </button>
+              <button class="btn btn-secondary" id="btn-test-tampered-payload">
+                ⚠️ Scenario 2: Re-use Key with Modified Payload (Expect 409 Conflict)
+              </button>
+              <button class="btn btn-secondary" id="btn-test-insufficient-inventory">
+                🛑 Scenario 3: Request 99,999 Items (Expect 422 Insufficient Inventory)
+              </button>
+            </div>
+
+            <div style="margin-top: 20px;">
+              <label style="margin-bottom: 6px; display: block;">HTTP Transaction Response</label>
+              <pre class="json-preview" id="order-response-preview">// Response payload will appear here after execution</pre>
+            </div>
+          </div>
+
+        </div>
+      </section>
+
+      <!-- TAB 3: Flash-Sale Concurrency Simulator -->
+      <section class="tab-pane" id="tab-concurrency" style="display: none;">
+        <div class="content-card">
+          <div class="card-title-row">
+            <h3>
+              <svg viewBox="0 0 24 24"><path d="M7 2v11h3v9l7-12h-4l4-8z"/></svg>
+              High-Concurrency Flash-Sale Stress Tester
+            </h3>
+            <span class="badge badge-warning">Zero Overselling Guarantee</span>
+          </div>
+
+          <p style="font-size: 0.88rem; color: var(--text-muted); margin-bottom: 24px;">
+            Simulate a flash-sale spike where multiple concurrent buyers race simultaneously for limited stock. 
+            The platform executes conditional atomic SQL updates (<code>WHERE available_quantity &gt;= :qty</code>) 
+            ensuring available stock NEVER drops below 0 under high contention.
+          </p>
+
+          <div class="stress-tester-panel">
+            <div class="stress-controls">
+              <div class="form-group">
+                <label for="stress-sku-select">Target Flash-Sale SKU</label>
+                <select id="stress-sku-select"></select>
+              </div>
+              <div class="form-group">
+                <label for="stress-threads-input">Concurrent Simulated Buyers (Parallel Requests)</label>
+                <input type="number" id="stress-threads-input" min="5" max="50" value="20">
+              </div>
+              <div class="form-group">
+                <label for="stress-qty-input">Quantity per Buyer</label>
+                <input type="number" id="stress-qty-input" min="1" max="10" value="2">
+              </div>
+              <button class="btn btn-danger" id="btn-fire-stress-test" style="margin-top: 8px;">
+                ⚡ Launch Flash-Sale Attack
+              </button>
+            </div>
+
+            <div class="stress-results">
+              <div class="stress-stat-row">
+                <span class="stat-label">Initial Available Stock</span>
+                <span class="stat-value" id="stress-initial-stock" style="font-size: 1.2rem;">-</span>
+              </div>
+              <div class="stress-stat-row">
+                <span class="stat-label">Successful Orders (Reserved)</span>
+                <span class="stat-value" id="stress-success-count" style="font-size: 1.2rem; color: var(--color-success);">-</span>
+              </div>
+              <div class="stress-stat-row">
+                <span class="stat-label">Rejected Orders (422 Insufficient)</span>
+                <span class="stat-value" id="stress-rejected-count" style="font-size: 1.2rem; color: var(--color-danger);">-</span>
+              </div>
+              <div class="stress-stat-row">
+                <span class="stat-label">Final Database Stock</span>
+                <span class="stat-value" id="stress-final-stock" style="font-size: 1.2rem; color: var(--color-primary);">-</span>
+              </div>
+              <div class="stress-stat-row">
+                <span class="stat-label">Oversold Units</span>
+                <span class="stat-value" id="stress-oversold-check" style="font-size: 1.2rem; color: var(--color-success);">0 (100% PREVENTED)</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- TAB 4: Transactional Outbox Stream -->
+      <section class="tab-pane" id="tab-outbox" style="display: none;">
+        <div class="content-card">
+          <div class="card-title-row">
+            <h3>
+              <svg viewBox="0 0 24 24"><path d="M20 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/></svg>
+              Transactional Outbox Event Stream
+            </h3>
+            <button class="btn btn-secondary btn-sm" id="btn-refresh-outbox">
+              🔄 Refresh Outbox
+            </button>
+          </div>
+
+          <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 16px;">
+            Events are persisted in the <code>outbox_events</code> table within the exact same ACID transaction as the order creation, eliminating dual-write loss before being dispatched asynchronously.
+          </p>
+
+          <div class="table-responsive">
+            <table id="outbox-table">
+              <thead>
+                <tr>
+                  <th>Event ID</th>
+                  <th>Aggregate ID</th>
+                  <th>Event Type</th>
+                  <th>Status</th>
+                  <th>Retries</th>
+                  <th>Created At</th>
+                  <th>Published At</th>
+                  <th>Payload</th>
+                </tr>
+              </thead>
+              <tbody id="outbox-table-body">
+                <tr><td colspan="8" style="text-align: center; color: var(--text-dim);">Loading outbox events...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- TAB 5: Orders & Audit Trail -->
+      <section class="tab-pane" id="tab-orders-list" style="display: none;">
+        <div class="content-card">
+          <div class="card-title-row">
+            <h3>
+              <svg viewBox="0 0 24 24"><path d="M19 3h-4.18C14.4 1.84 13.3 1 12 1c-1.3 0-2.4.84-2.82 2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-7 0c.55 0 1 .45 1 1s-.45 1-1 1-1-.45-1-1 .45-1 1-1zm2 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/></svg>
+              Recent Customer Orders & State Transitions
+            </h3>
+            <button class="btn btn-secondary btn-sm" id="btn-refresh-orders">
+              🔄 Refresh Orders
+            </button>
+          </div>
+
+          <div class="table-responsive">
+            <table id="orders-table">
+              <thead>
+                <tr>
+                  <th>Order Number</th>
+                  <th>Customer ID</th>
+                  <th>Total (USD)</th>
+                  <th>Status</th>
+                  <th>Items Count</th>
+                  <th>Created At</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+              <tbody id="orders-table-body">
+                <tr><td colspan="7" style="text-align: center; color: var(--text-dim);">Loading orders...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+    </main>
+
+  </div>
+
+  <!-- Payload / Restock Modal -->
+  <div class="modal-overlay" id="generic-modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h4 id="modal-title" style="font-size: 1rem; font-weight: 700;">Event Payload Details</h4>
+        <button class="modal-close" id="btn-close-modal">&times;</button>
+      </div>
+      <div id="modal-body">
+        <pre class="json-preview" id="modal-json">// Content</pre>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Notification Container -->
+  <div id="toast-container"></div>
+
+  <script src="app.js"></script>
+</body>
+</html>

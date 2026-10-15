@@ -20,6 +20,7 @@ import org.springframework.util.backoff.FixedBackOff;
  * exponential retry policies, and dead-letter topic (DLT) routing.
  */
 @Configuration
+@org.springframework.context.annotation.Profile("!local")
 public class KafkaConfig {
 
     private static final Logger LOG = LoggerFactory.getLogger(KafkaConfig.class);

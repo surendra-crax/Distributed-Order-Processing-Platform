@@ -146,4 +146,15 @@ public class InventoryService {
             LOG.info("Released {} reserved units for SKU: {}", qty, sku);
         });
     }
+
+    /**
+     * Retrieves all tracked inventory items sorted by SKU.
+     */
+    @Transactional(readOnly = true)
+    public List<InventoryResponse> getAllInventory() {
+        return inventoryRepository.findAll().stream()
+                .sorted(Comparator.comparing(Inventory::getSku))
+                .map(InventoryResponse::from)
+                .toList();
+    }
 }

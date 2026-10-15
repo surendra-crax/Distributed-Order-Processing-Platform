@@ -16,6 +16,7 @@ import org.springframework.data.redis.serializer.StringRedisSerializer;
 public class RedisConfig {
 
     @Bean
+    @org.springframework.boot.autoconfigure.condition.ConditionalOnBean(RedisConnectionFactory.class)
     public RedisTemplate<String, InventoryResponse> inventoryRedisTemplate(
             RedisConnectionFactory connectionFactory,
             ObjectMapper objectMapper) {

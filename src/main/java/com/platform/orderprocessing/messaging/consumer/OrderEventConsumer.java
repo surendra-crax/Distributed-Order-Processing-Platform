@@ -21,10 +21,6 @@ import org.springframework.transaction.annotation.Transactional;
  * Guarantees exactly-once business effects through deduplication persistence.
  */
 @Component
-@org.springframework.boot.autoconfigure.condition.ConditionalOnProperty(
-        name = "platform.kafka.consumer.enabled",
-        havingValue = "true",
-        matchIfMissing = true)
 public class OrderEventConsumer {
 
     private static final Logger LOG = LoggerFactory.getLogger(OrderEventConsumer.class);
@@ -50,12 +46,20 @@ public class OrderEventConsumer {
      */
     @KafkaListener(topics = "${platform.kafka.topics.orders:order.events}",
                    groupId = "${spring.kafka.consumer.group-id:order-processing-group}",
-                   containerFactory = "kafkaListenerContainerFactory")
+                   containerFactory = "kafkaListenerContainerFactory",
+                   autoStartup = "${platform.kafka.consumer.enabled:true}")
     @Transactional
     public void consumeOrderEvent(ConsumerRecord<String, String> record) {
-        String payload = record.value();
         LOG.info("Received event on partition {} offset {}: key={}", record.partition(), record.offset(), record.key());
+        processEventPayload(record.value());
+    }
 
+    /**
+     * Processes an event payload enforcing deduplication and state transitions.
+     * Accessible by both KafkaListener and local event relay.
+     */
+    @Transactional
+    public void processEventPayload(String payload) {
         try {
             JsonNode root = objectMapper.readTree(payload);
             String eventIdStr = root.path("eventId").asText();
@@ -94,8 +98,8 @@ public class OrderEventConsumer {
             }
 
         } catch (Exception ex) {
-            LOG.error("Error processing Kafka event record: {}", ex.getMessage());
-            throw new RuntimeException("Kafka consumer failed processing record", ex);
+            LOG.error("Error processing order event: {}", ex.getMessage());
+            throw new RuntimeException("Event consumer failed processing payload", ex);
         }
     }
 }

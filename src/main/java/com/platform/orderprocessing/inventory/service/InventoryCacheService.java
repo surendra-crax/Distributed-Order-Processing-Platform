@@ -23,7 +23,8 @@ public class InventoryCacheService {
     private final RedisOperations<String, InventoryResponse> redisOperations;
     private final Duration ttl;
 
-    public InventoryCacheService(RedisOperations<String, InventoryResponse> redisOperations,
+    public InventoryCacheService(@org.springframework.beans.factory.annotation.Autowired(required = false)
+                                 RedisOperations<String, InventoryResponse> redisOperations,
                                  @Value("${platform.cache.inventory-ttl-seconds:300}") long ttlSeconds) {
         this.redisOperations = redisOperations;
         this.ttl = Duration.ofSeconds(ttlSeconds);
@@ -34,6 +35,9 @@ public class InventoryCacheService {
      * Returns empty on cache miss or Redis error.
      */
     public Optional<InventoryResponse> getCachedInventory(String sku) {
+        if (redisOperations == null) {
+            return Optional.empty();
+        }
         try {
             String key = KEY_PREFIX + sku;
             InventoryResponse cached = redisOperations.opsForValue().get(key);
@@ -53,6 +57,9 @@ public class InventoryCacheService {
      * Logs warning and continues if Redis is unavailable.
      */
     public void cacheInventory(String sku, InventoryResponse response) {
+        if (redisOperations == null) {
+            return;
+        }
         try {
             String key = KEY_PREFIX + sku;
             redisOperations.opsForValue().set(key, response, ttl);
@@ -66,6 +73,9 @@ public class InventoryCacheService {
      * Evicts inventory from Redis upon stock mutation.
      */
     public void evictInventory(String sku) {
+        if (redisOperations == null) {
+            return;
+        }
         try {
             String key = KEY_PREFIX + sku;
             redisOperations.delete(key);
